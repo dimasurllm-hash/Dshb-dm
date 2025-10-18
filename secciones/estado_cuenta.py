@@ -188,20 +188,26 @@ def mostrar():
         (df_estado_cuenta["fecha_exigibilidad"] <= hoy + timedelta(days=60))
     ]["total"].sum()
 
+    por_vencer_90 = df_estado_cuenta[
+        (df_estado_cuenta["fecha_exigibilidad"] > hoy + timedelta(days=60)) &
+        (df_estado_cuenta["fecha_exigibilidad"] <= hoy + timedelta(days=90))
+    ]["total"].sum()
+
     por_vencer_90mas = df_estado_cuenta[
         df_estado_cuenta["fecha_exigibilidad"] > hoy + timedelta(days=90)
     ]["total"].sum()
 
     # --- Mostrar tarjetas en una sola línea ---
-    col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
+    col1, col2, col3, col4, col5 = st.columns([1, 1, 1, 1, 1])
     valores_vencimiento = [
         ("🔴 Total vencido", f"${total_vencido:,.2f}"),
-        ("🟠 Por vencer en 0-30 días", f"${por_vencer_30:,.2f}"),
-        ("🟡 Por vencer en 31-60 días", f"${por_vencer_60:,.2f}"),
-        ("🟢 Por vencer en +90 días", f"${por_vencer_90mas:,.2f}")
+        ("🟠 Por vencer 0-30 días", f"${por_vencer_30:,.2f}"),
+        ("🟡 Por vencer 31-60 días", f"${por_vencer_60:,.2f}"),
+        ("🟢 Por vencer 61-90 días", f"${por_vencer_90:,.2f}"),
+        ("🔵 Por vencer +90 días", f"${por_vencer_90mas:,.2f}")
     ]
 
-    for col, (titulo, valor) in zip([col1, col2, col3, col4], valores_vencimiento):
+    for col, (titulo, valor) in zip([col1, col2, col3, col4, col5], valores_vencimiento):
         col.metric(titulo, valor)
 
     # --------------------------------------------- Indicador: próxima fecha de exigibilidad --------------------------------------------------------------------------------
