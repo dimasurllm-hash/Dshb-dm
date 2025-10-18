@@ -171,30 +171,39 @@ def mostrar():
     st.markdown("<div class='spacer'></div>", unsafe_allow_html=True)
 
     # ----------------------------------------- TARJETAS DE VENCIMIENTO -----------------------------------------------------
-    df_estado_cuenta["fecha_exigibilidad"] = pd.to_datetime(df_estado_cuenta["fecha_exigibilidad"])
+
+    df_estado_cuenta["fecha_exigibilidad"] = pd.to_datetime(df_estado_cuenta["fecha_exigibilidad"], errors="coerce")
     hoy = pd.to_datetime(datetime.today().date())
 
+    # --- Cálculos de montos por rango de vencimiento ---
     total_vencido = df_estado_cuenta[df_estado_cuenta["fecha_exigibilidad"] < hoy]["total"].sum()
+
     por_vencer_30 = df_estado_cuenta[
         (df_estado_cuenta["fecha_exigibilidad"] >= hoy) &
         (df_estado_cuenta["fecha_exigibilidad"] <= hoy + timedelta(days=30))
     ]["total"].sum()
-    por_vencer_90 = df_estado_cuenta[
+
+    por_vencer_60 = df_estado_cuenta[
+        (df_estado_cuenta["fecha_exigibilidad"] > hoy + timedelta(days=30)) &
+        (df_estado_cuenta["fecha_exigibilidad"] <= hoy + timedelta(days=60))
+    ]["total"].sum()
+
+    por_vencer_90mas = df_estado_cuenta[
         df_estado_cuenta["fecha_exigibilidad"] > hoy + timedelta(days=90)
     ]["total"].sum()
 
-    col1, col2, col3 = st.columns([1, 1, 1])
+    # --- Mostrar tarjetas en una sola línea ---
+    col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
     valores_vencimiento = [
         ("🔴 Total vencido", f"${total_vencido:,.2f}"),
-        ("🟡 Por vencer en 30 días", f"${por_vencer_30:,.2f}"),
-        ("🟢 Por vencer >90 días", f"${por_vencer_90:,.2f}")
+        ("🟠 Por vencer en 0-30 días", f"${por_vencer_30:,.2f}"),
+        ("🟡 Por vencer en 31-60 días", f"${por_vencer_60:,.2f}"),
+        ("🟢 Por vencer en +90 días", f"${por_vencer_90mas:,.2f}")
     ]
 
-    for col, (titulo, valor) in zip([col1, col2, col3], valores_vencimiento):
+    for col, (titulo, valor) in zip([col1, col2, col3, col4], valores_vencimiento):
         col.metric(titulo, valor)
 
-
-    
     # --------------------------------------------- Indicador: próxima fecha de exigibilidad --------------------------------------------------------------------------------
     hoy = datetime.today().date()
     fechas_exig = pd.to_datetime(df_estado_cuenta["fecha_exigibilidad"]).dt.date
