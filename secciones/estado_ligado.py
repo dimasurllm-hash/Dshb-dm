@@ -201,11 +201,11 @@ def mostrar(df, config):
     st.markdown("""
     <style>
     .button-morado {
-        background-color: #A020F0; 
-        color: white;
+        background-color: #000080; 
+        color: white !important;          /* ← texto blanco */
         padding: 10px 14px;
         border-radius: 30px;
-        text-decoration: none;
+        text-decoration: none !important; /* ← quita subrayado */
         display: inline-block;
         width: 100%;
         text-align: center;
@@ -215,9 +215,12 @@ def mostrar(df, config):
     .button-morado:hover {
         background-color: #8B00D6;
         transform: scale(1.03);
+        color: white !important;          /* ← sigue blanco al pasar cursor */
+        text-decoration: none !important; /* ← evita que aparezca subrayado */
     }
     </style>
     """, unsafe_allow_html=True)
+
 
     # Distribuir 4 columnas
     cols = st.columns(4)
@@ -226,6 +229,6 @@ def mostrar(df, config):
         col = cols[i % 4]
         with col:
             st.markdown(
-                f'<a class="button-morado" href="{suc["url"]}" target="_blank">📄 {suc["nombre"]}</a>',
+                f'<a class="button-morado" href="{suc["url"]}" target="_blank"> {suc["nombre"]}</a>',
                 unsafe_allow_html=True
             )
