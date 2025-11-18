@@ -172,3 +172,60 @@ def mostrar(df, config):
             .applymap(resaltar_valores)
             .format("${:,.2f}")
     )
+
+    # ---------------------- INFORME DETALLADO DE LIGADO POR SUCURSAL ----------------------
+
+    st.markdown("---")
+    st.subheader("📄 Informe detallado de ligado por sucursal")
+
+    sucursales = [
+        { "nombre": "Acayucan", "url": "https://docs.google.com/spreadsheets/d/13UHVPsiI7MejlVLFA1jePD_bgZ6T9FhwmB7bRVZnTrI/edit?usp=sharing" },
+        { "nombre": "Campeche", "url": "https://docs.google.com/spreadsheets/d/15cN90A8jig7pit9ZalubhWM0wfSSXN1Udsjc9BSALrI/edit?usp=sharing" },
+        { "nombre": "Cancun", "url": "https://docs.google.com/spreadsheets/d/1KXLgaNAg0Jp6IGG0YLZZLu-b-Hd5cZ2GcgNEZEJh8tE/edit?usp=sharing" },
+        { "nombre": "Chetumal", "url": "https://docs.google.com/spreadsheets/d/1sP2AmsY1neNtgKcpI60UH03dVZpbhK3xOdBqYmZU6F8/edit?usp=sharing" },
+        { "nombre": "Comitan", "url": "https://docs.google.com/spreadsheets/d/1B9nUT5kDhhcNQdUeGhNo96cZg6RhyJNZs-BraKUkc3k/edit?usp=sharing" },
+        { "nombre": "Isla", "url": "https://docs.google.com/spreadsheets/d/1xqDNrrRSCfxGSoytnmRhD8HdEoTMTDG_NXkzpIi8JkE/edit?usp=sharing" },
+        { "nombre": "Merida", "url": "https://docs.google.com/spreadsheets/d/1-oqJNdE_Fdpxveel6LgH3fuFo-OgDd0ot3AnrYlnZyc/edit?usp=sharing" },
+        { "nombre": "Puebla", "url": "https://docs.google.com/spreadsheets/d/16oAlX4oqepUbdutQpChEt5RbMzJ8c_uOEUcRPhyePeE/edit?usp=sharing" },
+        { "nombre": "Tapachula", "url": "https://docs.google.com/spreadsheets/d/1HpevkdoZqi3H8GAe6HJw5KpQNHIyI_hy2HGGxgfXRRM/edit?usp=sharing" },
+        { "nombre": "Tierra blanca", "url": "https://docs.google.com/spreadsheets/d/1k-JlkvOJ9hemos7Sdsk1-IHa6OaB5ax-JxTO_5_T7so/edit?usp=sharing" },
+        { "nombre": "Tizimin", "url": "https://docs.google.com/spreadsheets/d/18a8sSJRC260-AKXbH22pI9WwFATh-oGwtOg_4QaxUYE/edit?usp=sharing" },
+        { "nombre": "Tuxtepec", "url": "https://docs.google.com/spreadsheets/d/1DlePgvlI3ruGxmidITMjyMKlcxzLXKT3yXD4-NApx2Y/edit?usp=sharing" },
+        { "nombre": "Tuxtla Gtz", "url": "https://docs.google.com/spreadsheets/d/1rgnyUwWmhmSc8trMzvGqvSWHzMI375ZKZjdL3T3WSE4/edit?usp=sharing" },
+        { "nombre": "Veracruz", "url": "https://docs.google.com/spreadsheets/d/1k7u7jBRqq8fhQ4dR92DgEmyyvnvx5BO8vZlsp-PVEXg/edit?usp=sharing" },
+        { "nombre": "Villahermosa", "url": "https://docs.google.com/spreadsheets/d/1QMGvVzOxtQiVEpdhYnoOyjQwDqlM2P54yKd6eeQSAsk/edit?usp=sharing" },
+        { "nombre": "Zapata", "url": "https://docs.google.com/spreadsheets/d/1MiGMmvPkMGk6ladmFSQZ5SwaKg0oYIdffoin5yA4HBc/edit?usp=sharing" },
+    ]
+
+    # ---- Estilo CSS para botones morados y redondos ----
+    st.markdown("""
+    <style>
+    .button-morado {
+        background-color: #A020F0; 
+        color: white;
+        padding: 10px 14px;
+        border-radius: 30px;
+        text-decoration: none;
+        display: inline-block;
+        width: 100%;
+        text-align: center;
+        font-weight: 600;
+        transition: 0.2s ease-in-out;
+    }
+    .button-morado:hover {
+        background-color: #8B00D6;
+        transform: scale(1.03);
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Distribuir 4 columnas
+    cols = st.columns(4)
+
+    for i, suc in enumerate(sucursales):
+        col = cols[i % 4]
+        with col:
+            st.markdown(
+                f'<a class="button-morado" href="{suc["url"]}" target="_blank">📄 {suc["nombre"]}</a>',
+                unsafe_allow_html=True
+            )
