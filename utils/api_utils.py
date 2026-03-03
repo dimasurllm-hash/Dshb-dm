@@ -1,3 +1,5 @@
+#utils\api_utils.py
+
 import requests
 import pandas as pd
 import streamlit as st
@@ -8,7 +10,7 @@ from babel.dates import format_datetime
 API_TOKEN = st.secrets["api"]["API_TOKEN"]
 API_BASE = st.secrets["api"]["API_BASE"]
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=86400)
 def obtener_datos_api():
     """Obtiene los datos principales desde la API y regresa un DataFrame."""
     url = f"{API_BASE}/datos"
@@ -22,7 +24,7 @@ def obtener_datos_api():
         st.error(f"Error al obtener datos de la API: {e}")
         return pd.DataFrame()
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=86400)
 def obtener_estado_cuenta_api():
     """Obtiene el estado de cuenta desde la API y regresa un DataFrame y la fecha de corte."""
     url = f"{API_BASE}/estado_cuenta"

@@ -1,3 +1,5 @@
+#dashboard.py
+
 import streamlit as st
 import pandas as pd
 from datetime import datetime
@@ -112,6 +114,9 @@ if authentication_status:
         """, unsafe_allow_html=True)
 
         st.markdown("---")
+        if st.button("Limpiar memoria", use_container_width=True):
+            st.cache_data.clear()
+            st.rerun()
         mostrar_fecha_actualizacion()
 
     # ------------------- RENDERIZADO DINÁMICO -------------------
