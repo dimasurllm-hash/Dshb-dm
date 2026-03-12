@@ -966,8 +966,6 @@ def mostrar():
     footer_totals = {col: pivot_tipo[col].sum() for col in columnas_numericas}
     footer_totals["sucursal"] = "TOTAL"
 
-
-
     # Mostrar tabla
     mostrar_tabla_matriz_html(
         pivot_tipo,
@@ -989,6 +987,8 @@ def mostrar():
         file_name="estado_cuenta_tipo.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
+    #a ver si se 
 
     # ----------------------------- TABLA MAQUINARIA -----------------------------
 
