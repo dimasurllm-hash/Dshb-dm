@@ -2,3 +2,11 @@ server-ca.pem
 hash_password.py
 algoultrasecreto.py
 .streamlit/secrets.toml
+# Entorno virtual
+venv/
+env/
+.venv/
+
+# Python cache
+**/__pycache__/
+*.pyc
