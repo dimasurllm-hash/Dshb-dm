@@ -11,8 +11,15 @@ import plotly.express as px
 from io import BytesIO
 from datetime import datetime, timedelta
 from utils.config import cargar_config
-from utils.api_utils import obtener_estado_cuenta_api
+from utils.api_utils import obtener_estado_cuenta_api, obtener_edc_maquinaria_api, obtener_edc_tipo_api
+from utils.table_utils import mostrar_tabla_matriz_html
 from st_aggrid import AgGrid, GridOptionsBuilder, ColumnsAutoSizeMode, JsCode, AgGridTheme
+
+def to_excel(df, sheet_name="datos"):
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+        df.to_excel(writer, index=False, sheet_name=sheet_name)
+    return output.getvalue()
 
 
 #================= CARGA DE DATOS ====================
@@ -24,6 +31,15 @@ def cargar_estado_cuenta():
 def cargar_config():
     with open("config_colores.json", "r", encoding="utf-8") as f:
         return json.load(f)
+    
+@st.cache_data(ttl=300)
+def cargar_edc_tipo():
+    return obtener_edc_tipo_api()
+
+
+@st.cache_data(ttl=300)
+def cargar_edc_maquinaria():
+    return obtener_edc_maquinaria_api()
     
 # ================== CONFIGURACIÓN =====================
 
@@ -82,6 +98,8 @@ def mostrar():
     colores_sucursales = config["sucursales"]
     
     df_estado_cuenta, fecha_corte = cargar_estado_cuenta()
+    df_edc_tipo, fecha_corte_tipo = cargar_edc_tipo()
+    df_edc_maq, fecha_corte_maq = cargar_edc_maquinaria()
     if df_estado_cuenta.empty or fecha_corte is None:
         st.warning("No hay datos de estado de cuenta.")
         return
@@ -652,22 +670,14 @@ def mostrar():
         key=f"grid-estado-cuenta-{'expand' if expandir else 'fit'}"
     )
 
-    #--------------------- BOTON DE DESCARGA -----------
-    def to_excel(df):
-        import io
-        output = io.BytesIO()
-        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            df.to_excel(writer, sheet_name='EstadoCuenta')
-        return output.getvalue()
-    
-    excel_data = to_excel(df_pivot)
+    df_export = pd.concat([data_sin_total, total_row], ignore_index=True)
+    excel_data = to_excel(df_export, "estado_cuenta")
     st.download_button(
-        label="Descargar tabla en Excel",
+        label="📥 Descargar tabla en Excel",
         data=excel_data,
         file_name=f"estado_cuenta_{fecha_corte.strftime('%Y%m%d')}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-
     #----------------------------------------- TABLA DE FECHA DE VENCIMIENTO -------------------------------------------------------------------------------
 
     hoy = datetime.today()
@@ -898,11 +908,11 @@ def mostrar():
         df_filtrado = pd.concat([df_filtrado, total_row_bucket], ignore_index=True)
 
     # --- Función para exportar a Excel ---
-    def to_excel(df):
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
-            df.to_excel(writer, index=False, sheet_name="Vencimiento")
-        return output.getvalue()
+    #def to_excel(df):
+    #    output = BytesIO()
+    #    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+    #        df.to_excel(writer, index=False, sheet_name="Vencimiento")
+    #    return output.getvalue()
 
     # --- Botón de descarga ---
     st.download_button(
@@ -911,6 +921,143 @@ def mostrar():
         file_name="estado_cuenta_vencimiento.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
+    # -------------------------------- TABLA DINÁMICA POR TIPO --------------------------------
+    st.markdown("### Estado de cuenta por tipo")
+    df_pivot = df_edc_tipo.copy()
+    df_pivot["fecha_exigibilidad"] = pd.to_datetime(
+        df_pivot["fecha_exigibilidad"], errors="coerce"
+    )
+    df_pivot["total"] = pd.to_numeric(df_pivot["total"], errors="coerce").fillna(0)
+    # Formatear fecha para columnas
+    df_pivot["fecha_exigibilidad_str"] = df_pivot["fecha_exigibilidad"].dt.strftime("%d/%m/%Y")
+
+    pivot_tipo = pd.pivot_table(
+        df_pivot,
+        index=["sucursal", "codigo_6digitos", "tipo"],
+        columns="fecha_exigibilidad_str",
+        values="total",
+        aggfunc="sum",
+        fill_value=0
+    )
+    # Ordenar columnas por fecha real
+    pivot_tipo = pivot_tipo.reindex(
+        sorted(
+            pivot_tipo.columns,
+            key=lambda x: pd.to_datetime(x, format="%d/%m/%Y")
+        ),
+        axis=1
+    )
+
+    # Convertir índice a columnas normales
+    pivot_tipo = pivot_tipo.reset_index()
+    # Renombrar columna
+    pivot_tipo = pivot_tipo.rename(columns={"codigo_6digitos": "codigo"})
+    columnas_fijas = ["sucursal", "codigo", "tipo"]
+    columnas_fechas = [
+        c for c in pivot_tipo.columns
+        if c not in columnas_fijas
+    ]
+    # crear total
+    pivot_tipo["Total"] = pivot_tipo[columnas_fechas].sum(axis=1)
+    # columnas numéricas correctas
+    columnas_numericas = columnas_fechas + ["Total"]
+    # Totales para footer
+    footer_totals = {col: pivot_tipo[col].sum() for col in columnas_numericas}
+    footer_totals["sucursal"] = "TOTAL"
+
+
+
+    # Mostrar tabla
+    mostrar_tabla_matriz_html(
+        pivot_tipo,
+        header_left=columnas_fijas,
+        data_columns=columnas_fechas,
+        header_right=["Total"],
+        max_height=900,
+        footer_totals=footer_totals
+    )
+
+    df_export = pd.concat(
+        [pivot_tipo, pd.DataFrame([footer_totals])],
+        ignore_index=True
+    )
+
+    st.download_button(
+        "📥 Descargar Excel",
+        data=to_excel(df_export, "edc_tipo"),
+        file_name="estado_cuenta_tipo.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+    # ----------------------------- TABLA MAQUINARIA -----------------------------
+
+    df_maq, fecha_corte_maq = cargar_edc_maquinaria()
+
+    st.markdown(f"### Maquinaria (Fecha de corte: {fecha_corte_maq.strftime('%d/%m/%Y')})")
+
+    df_pivot = df_maq.copy()
+
+    df_pivot["fecha_exigibilidad"] = pd.to_datetime(
+        df_pivot["fecha_exigibilidad"], errors="coerce"
+    )
+
+    df_pivot["total"] = pd.to_numeric(
+        df_pivot["total"], errors="coerce"
+    ).fillna(0)
+
+    # Formato de columnas de fecha
+    df_pivot["fecha_exigibilidad_str"] = df_pivot["fecha_exigibilidad"].dt.strftime("%d/%m/%Y")
+
+    pivot_maq = pd.pivot_table(
+        df_pivot,
+        index=["tipo"],
+        columns="fecha_exigibilidad_str",
+        values="total",
+        aggfunc="sum",
+        fill_value=0
+    )
+
+    # Ordenar columnas por fecha real
+    pivot_maq = pivot_maq.reindex(
+        sorted(
+            pivot_maq.columns,
+            key=lambda x: pd.to_datetime(x, format="%d/%m/%Y")
+        ),
+        axis=1
+    )
+
+    # Convertir índice a columna
+    pivot_maq = pivot_maq.reset_index()
+
+    # Identificar columnas
+    header_left = ["tipo"]
+    data_columns = [c for c in pivot_maq.columns if c not in header_left]
+
+    # Agregar total por fila
+    pivot_maq["Total"] = pivot_maq[data_columns].sum(axis=1)
+
+    # Totales del footer
+    footer_totals = {col: pivot_maq[col].sum() for col in data_columns + ["Total"]}
+    footer_totals["tipo"] = "TOTAL"
+
+    # Mostrar tabla
+    mostrar_tabla_matriz_html(
+        pivot_maq,
+        header_left=header_left,
+        data_columns=data_columns,
+        header_right=["Total"],
+        max_height=500,
+        footer_totals=footer_totals
+    )
+
+    st.download_button(
+        "📥 Descargar Excel",
+        data=to_excel(pivot_maq, "maquinaria"),
+        file_name="maquinaria.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
 
     #----------------------------------- GRAFICO DE ANILLOS ------------------------------------------------------------------------------------------------------------------------
     st.markdown("### Distribución de la deuda según la fecha de exigibilidad")

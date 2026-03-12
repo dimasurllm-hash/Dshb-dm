@@ -44,6 +44,58 @@ def obtener_estado_cuenta_api():
     except Exception as e:
         st.error(f"Error al obtener estado de cuenta: {e}")
         return pd.DataFrame(), None
+    
+@st.cache_data(ttl=86400)
+def obtener_edc_tipo_api():
+    """Obtiene el estado de cuenta separado por tipo."""
+    
+    url = f"{API_BASE}/edc_tipo"
+    headers = {"Authorization": f"Bearer {API_TOKEN}"}
+
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+
+        lista_datos = data.get("datos", [])
+        fecha_corte = pd.to_datetime(data.get("fecha_corte"))
+
+        df = pd.DataFrame(lista_datos)
+
+        if df.empty:
+            return pd.DataFrame(), None
+
+        return df, fecha_corte
+
+    except Exception as e:
+        st.error(f"Error al obtener estado de cuenta por tipo: {e}")
+        return pd.DataFrame(), None
+    
+@st.cache_data(ttl=86400)
+def obtener_edc_maquinaria_api():
+    """Obtiene el estado de cuenta de maquinaria."""
+
+    url = f"{API_BASE}/edc_maquinaria"
+    headers = {"Authorization": f"Bearer {API_TOKEN}"}
+
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+
+        lista_datos = data.get("datos", [])
+        fecha_corte = pd.to_datetime(data.get("fecha_corte"))
+
+        df = pd.DataFrame(lista_datos)
+
+        if df.empty:
+            return pd.DataFrame(), None
+
+        return df, fecha_corte
+
+    except Exception as e:
+        st.error(f"Error al obtener estado de cuenta maquinaria: {e}")
+        return pd.DataFrame(), None
 
 def mostrar_fecha_actualizacion():
     """Muestra en pantalla la última fecha de actualización obtenida de la API."""
