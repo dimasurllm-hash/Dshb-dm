@@ -143,26 +143,34 @@ def mostrar():
         aggfunc="sum"
     )
 
-    # 2. Asegurarnos de que el índice y las columnas no tengan el mismo nombre 
-    # Esto evita el ValueError en stack()
-    tabla.index.name = "fecha_idx"
-    tabla.columns.name = "sucursal_col"
-
-    # 3. Reindexar con las fechas
+    # 2. Reindexar con las fechas
     fechas = sorted(df["fecha_exigibilidad"].dropna().unique())
     tabla = tabla.reindex(fechas).fillna(0)
 
-    # 4. Stack seguro
-    # Convertimos a DataFrame inmediatamente para evitar conflictos de nombres
-    df_completo = tabla.stack(dropna=False).reset_index()
+    # --- CAMBIO CRÍTICO PARA PYTHON 3.13 ---
+    # Convertimos la tabla a un array de Numpy y reconstruimos para 
+    # limpiar CUALQUIER nombre oculto que esté causando el ValueError
+    tabla_limpia = pd.DataFrame(
+        tabla.values, 
+        index=tabla.index, 
+        columns=tabla.columns
+    )
     
-    # 5. Renombrar las columnas resultantes
-    df_completo.columns = ["fecha_exigibilidad", "cuenta_sucursal", "total"]
+    # Eliminamos nombres de los ejes por completo
+    tabla_limpia.index.name = None
+    tabla_limpia.columns.name = None
 
-    # 6. Unir con metadatos (SOLO UNA VEZ)
-    # Nota: En tu código tenías el merge repetido dos veces, quita uno.
+    # Ahora el stack no tiene ninguna etiqueta con la cual chocar
+    df_completo = tabla_limpia.stack(dropna=False).reset_index()
+    
+    # Asignamos los nombres de las columnas manualmente
+    df_completo.columns = ["fecha_exigibilidad", "cuenta_sucursal", "total"]
+    # ---------------------------------------
+
+    # 3. Unir con metadatos
     df_completo = df_completo.merge(meta, on="cuenta_sucursal", how="left")
 
+    # Rellenar nulos
     df_completo[["sucursal","codigo","abreviatura"]] = df_completo[["sucursal","codigo","abreviatura"]].fillna({
         "sucursal":"Desconocida",
         "codigo":"Desconocido",
