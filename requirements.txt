@@ -6,7 +6,7 @@ matplotlib
 seaborn
 requests
 xlsxwriter
-streamlit-aggrid
+streamlit-aggrid==1.0.5
 babel
 calplot
 streamlit-authenticator==0.2.2

@@ -145,8 +145,17 @@ def mostrar():
     fechas = sorted(df["fecha_exigibilidad"].dropna().unique())
     tabla = tabla.reindex(fechas).fillna(0)
 
-    df_completo = tabla.stack(dropna=False).reset_index(name="total")
-    df_completo = df_completo.rename(columns={"level_2": "cuenta_sucursal"})
+    # --- CAMBIO AQUÍ ---
+    df_completo = tabla.stack(dropna=False).reset_index()
+    df_completo.columns = ["fecha_exigibilidad", "cuenta_sucursal", "total"]
+    
+    # Ya no necesitas el rename de "level_2" porque ya lo nombramos arriba
+
+    df_completo = df_completo.merge(meta, on="cuenta_sucursal", how="left")
+
+
+    #df_completo = tabla.stack(dropna=False).reset_index(name="total")
+    #df_completo = df_completo.rename(columns={"level_2": "cuenta_sucursal"})
     df_completo = df_completo.merge(meta, on="cuenta_sucursal", how="left")
 
     df_completo[["sucursal","codigo","abreviatura"]] = df_completo[["sucursal","codigo","abreviatura"]].fillna({
