@@ -147,29 +147,25 @@ def mostrar():
     fechas = sorted(df["fecha_exigibilidad"].dropna().unique())
     tabla = tabla.reindex(fechas).fillna(0)
 
-    # --- CAMBIO CRÍTICO PARA PYTHON 3.13 ---
-    # Convertimos la tabla a un array de Numpy y reconstruimos para 
-    # limpiar CUALQUIER nombre oculto que esté causando el ValueError
-    tabla_limpia = pd.DataFrame(
-        tabla.values, 
-        index=tabla.index, 
-        columns=tabla.columns
-    )
+    # --- SOLUCIÓN QUIRÚRGICA: EVITAMOS STACK() POR COMPLETO ---
+    # Creamos una lista de diccionarios para reconstruir el DataFrame manualmente
+    data_list = []
+    for fecha in tabla.index:
+        for sucursal in tabla.columns:
+            valor = tabla.at[fecha, sucursal]
+            data_list.append({
+                "fecha_exigibilidad": fecha,
+                "cuenta_sucursal": sucursal,
+                "total": valor
+            })
     
-    # Eliminamos nombres de los ejes por completo
-    tabla_limpia.index.name = None
-    tabla_limpia.columns.name = None
-
-    # Ahora el stack no tiene ninguna etiqueta con la cual chocar
-    df_completo = tabla_limpia.stack(dropna=False).reset_index()
-    
-    # Asignamos los nombres de las columnas manualmente
-    df_completo.columns = ["fecha_exigibilidad", "cuenta_sucursal", "total"]
-    # ---------------------------------------
+    # Creamos el DataFrame desde la lista
+    df_completo = pd.DataFrame(data_list)
+    # ---------------------------------------------------------
 
     # 3. Unir con metadatos
     df_completo = df_completo.merge(meta, on="cuenta_sucursal", how="left")
-
+    
     # Rellenar nulos
     df_completo[["sucursal","codigo","abreviatura"]] = df_completo[["sucursal","codigo","abreviatura"]].fillna({
         "sucursal":"Desconocida",
