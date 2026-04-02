@@ -135,6 +135,7 @@ def mostrar():
 
     meta = df[["cuenta_sucursal", "codigo", "sucursal", "abreviatura"]].drop_duplicates()
 
+    # 1. Crear la tabla pivote
     tabla = df.pivot_table(
         index="fecha_exigibilidad",
         columns="cuenta_sucursal",
@@ -142,20 +143,24 @@ def mostrar():
         aggfunc="sum"
     )
 
+    # 2. Asegurarnos de que el índice y las columnas no tengan el mismo nombre 
+    # Esto evita el ValueError en stack()
+    tabla.index.name = "fecha_idx"
+    tabla.columns.name = "sucursal_col"
+
+    # 3. Reindexar con las fechas
     fechas = sorted(df["fecha_exigibilidad"].dropna().unique())
     tabla = tabla.reindex(fechas).fillna(0)
 
-    # --- CAMBIO AQUÍ ---
+    # 4. Stack seguro
+    # Convertimos a DataFrame inmediatamente para evitar conflictos de nombres
     df_completo = tabla.stack(dropna=False).reset_index()
-    df_completo.columns = ["fecha_exigibilidad", "cuenta_sucursal", "total"]
     
-    # Ya no necesitas el rename de "level_2" porque ya lo nombramos arriba
+    # 5. Renombrar las columnas resultantes
+    df_completo.columns = ["fecha_exigibilidad", "cuenta_sucursal", "total"]
 
-    df_completo = df_completo.merge(meta, on="cuenta_sucursal", how="left")
-
-
-    #df_completo = tabla.stack(dropna=False).reset_index(name="total")
-    #df_completo = df_completo.rename(columns={"level_2": "cuenta_sucursal"})
+    # 6. Unir con metadatos (SOLO UNA VEZ)
+    # Nota: En tu código tenías el merge repetido dos veces, quita uno.
     df_completo = df_completo.merge(meta, on="cuenta_sucursal", how="left")
 
     df_completo[["sucursal","codigo","abreviatura"]] = df_completo[["sucursal","codigo","abreviatura"]].fillna({
