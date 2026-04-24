@@ -5,7 +5,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from datetime import datetime
 import io
-from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
+from st_aggrid import AgGrid, GridOptionsBuilder, JsCode, AgGridTheme
 from utils.api_utils import obtener_datos_api
 
 
@@ -346,7 +346,7 @@ def mostrar(df_filtrado, config):
         allow_unsafe_jscode=True,
         custom_css=custom_css,
         enable_enterprise_modules=False,
-        theme="ag-theme-alpine"
+        theme=AgGridTheme.ALPINE
     )
 
     # ------------------------- GRÁFICO DE LÍNEAS: EVOLUCIÓN DE COMPRAS POR MES Y SUCURSAL -------------------------------------

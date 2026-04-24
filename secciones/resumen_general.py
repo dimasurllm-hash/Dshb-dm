@@ -158,7 +158,8 @@ def mostrar(df_filtrado, config):
     tabla_horizontal_df = tabla_horizontal_df[cols]
 
     # Formatear montos como moneda
-    tabla_html = tabla_horizontal_df.applymap(lambda x: f"${x:,.2f}")
+    fn = getattr(tabla_horizontal_df, "map", None) or tabla_horizontal_df.applymap
+    tabla_html = fn(lambda x: f"${x:,.2f}")
 
     # HTML dinámico
     header_html = ''.join([

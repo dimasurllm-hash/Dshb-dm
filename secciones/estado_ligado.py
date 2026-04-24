@@ -169,7 +169,7 @@ def mostrar(df, config):
     st.subheader("Tabla resumen del monto sin ligar por mes y sucursal")
     st.dataframe(
         tabla_resumen.style
-            .applymap(resaltar_valores)
+            .map(resaltar_valores)
             .format("${:,.2f}")
     )
 
